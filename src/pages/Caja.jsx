@@ -1,4 +1,4 @@
-import { useState, useEffect, Component } from 'react'
+import { useState, useEffect, useRef, Component } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
@@ -595,6 +595,27 @@ export default function Caja() {
     navigate('/')
   }
 
+  // ── Menú hamburguesa ──────────────────────────────────────────────────────
+  const [showNavMenu, setShowNavMenu] = useState(false)
+  const navMenuRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (navMenuRef.current && !navMenuRef.current.contains(e.target)) {
+        setShowNavMenu(false)
+      }
+    }
+    if (showNavMenu) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showNavMenu])
+
+  const NAV_ITEMS = [
+    { icon: '🧾', label: 'Caja',           path: '/caja'   },
+    { icon: '🍳', label: 'Cocina',          path: '/cocina' },
+    { icon: '🍽️', label: 'Menú',           path: '/menu'   },
+    { icon: '⚙️', label: 'Administración', path: '/admin'  },
+  ]
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <ErrorBoundary>
@@ -632,17 +653,44 @@ export default function Caja() {
               </button>
             )}
           </div>
-          <button
-            type="button"
-            onClick={signOut}
-            className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-slate-800"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
-            </svg>
-            Cerrar sesión
-          </button>
+          {/* Menú hamburguesa */}
+          <div className="relative" ref={navMenuRef}>
+            <button type="button"
+              onClick={() => setShowNavMenu(v => !v)}
+              className="flex items-center justify-center w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700
+                         text-slate-300 hover:text-white transition text-lg"
+              title="Navegación">
+              ☰
+            </button>
+
+            {showNavMenu && (
+              <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-slate-700
+                              bg-[#1e293b] shadow-2xl z-50 overflow-hidden py-1">
+                {NAV_ITEMS.map(({ icon, label, path }) => (
+                  <button key={path} type="button"
+                    onClick={() => { setShowNavMenu(false); navigate(path) }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition
+                      ${path === '/caja'
+                        ? 'text-orange-400 bg-orange-500/10 font-semibold'
+                        : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}>
+                    <span className="text-base">{icon}</span>
+                    {label}
+                  </button>
+                ))}
+                <div className="border-t border-slate-700 mt-1 pt-1">
+                  <button type="button" onClick={signOut}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-400
+                               hover:bg-red-500/10 hover:text-red-400 transition">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+                    </svg>
+                    Cerrar sesión
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </header>
 
         {/* ── BARRA SUPERIOR (Nuevo Ticket + Drawer) ───────────────────────── */}
