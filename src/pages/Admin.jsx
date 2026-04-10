@@ -367,8 +367,9 @@ export default function Admin() {
   const navigate = useNavigate()
 
   const [unlocked, setUnlocked] = useState(false)
-  const [theme,    setTheme]    = useState(() => readLS('taqueropOS_tema', null))
-  const [section,  setSection]  = useState('dashboard')
+  const [theme,       setTheme]       = useState(() => readLS('taqueropOS_tema', null))
+  const [section,     setSection]     = useState('dashboard')
+  const [showSidebar, setShowSidebar] = useState(false)
 
   // Dashboard data
   const [cobrados,    setCobrados]    = useState([])
@@ -1801,15 +1802,13 @@ export default function Admin() {
     ? `Dashboard — ${negocioNombre}`
     : SECTION_TITLES[section] ?? ''
 
-  return (
-    <div className={`flex h-screen overflow-hidden ${t.bg}`}>
-
-      {/* ── BARRA LATERAL ──────────────────────────────────────────────────── */}
-      <aside className="w-56 shrink-0 bg-slate-950 border-r border-slate-800 flex flex-col overflow-y-auto">
-
+  // Sidebar contents — compartido entre drawer y sidebar fijo
+  function SidebarContent({ onNav }) {
+    return (
+      <>
         {/* Logo */}
         <div className="px-4 py-4 border-b border-slate-800 shrink-0">
-          <button type="button" onClick={() => setSection('dashboard')}
+          <button type="button" onClick={() => { setSection('dashboard'); onNav?.() }}
             className="flex items-center gap-2 w-full text-left">
             <span className="text-xl">🌮</span>
             <span className="text-white font-extrabold text-base tracking-tight">
@@ -1821,7 +1820,7 @@ export default function Admin() {
 
         {/* Dashboard */}
         <div className="px-3 pt-3 shrink-0">
-          <button type="button" onClick={() => setSection('dashboard')}
+          <button type="button" onClick={() => { setSection('dashboard'); onNav?.() }}
             className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition
               ${section === 'dashboard'
                 ? 'bg-orange-500/20 text-orange-400'
@@ -1839,7 +1838,7 @@ export default function Admin() {
               </p>
               <div className="space-y-0.5">
                 {items.map(({ id, label: itemLabel }) => (
-                  <button key={id} type="button" onClick={() => setSection(id)}
+                  <button key={id} type="button" onClick={() => { setSection(id); onNav?.() }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm transition
                       ${section === id
                         ? 'bg-orange-500/20 text-orange-400 font-medium'
@@ -1865,20 +1864,50 @@ export default function Admin() {
             🚪 Cerrar sesión
           </button>
         </div>
+      </>
+    )
+  }
+
+  return (
+    <div className={`flex h-screen overflow-hidden ${t.bg}`}>
+
+      {/* ── SIDEBAR DRAWER (móvil) ─────────────────────────────────────────── */}
+      {showSidebar && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowSidebar(false)} />
+          {/* Drawer */}
+          <aside className="relative w-64 shrink-0 bg-slate-950 border-r border-slate-800 flex flex-col overflow-y-auto">
+            <SidebarContent onNav={() => setShowSidebar(false)} />
+          </aside>
+        </div>
+      )}
+
+      {/* ── BARRA LATERAL (desktop) ────────────────────────────────────────── */}
+      <aside className="hidden md:flex w-56 shrink-0 bg-slate-950 border-r border-slate-800 flex-col overflow-y-auto">
+        <SidebarContent />
       </aside>
 
       {/* ── CONTENIDO PRINCIPAL ────────────────────────────────────────────── */}
       <main className="flex-1 flex flex-col overflow-hidden">
 
         {/* Header */}
-        <div className={`shrink-0 flex items-center justify-between px-6 py-4 border-b ${t.hdr}`}>
-          <div>
-            <h1 className={`font-bold text-xl leading-tight ${t.text}`}>{currentTitle}</h1>
-            {section === 'dashboard' && (
-              <p className={`text-sm capitalize ${t.textSub}`}>
-                {new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
-            )}
+        <div className={`shrink-0 flex items-center justify-between px-4 md:px-6 py-4 border-b ${t.hdr}`}>
+          <div className="flex items-center gap-3">
+            {/* Hamburguesa (solo móvil) */}
+            <button type="button" onClick={() => setShowSidebar(true)}
+              className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition text-lg">
+              ☰
+            </button>
+            <div>
+              <h1 className={`font-bold text-lg md:text-xl leading-tight ${t.text}`}>{currentTitle}</h1>
+              {section === 'dashboard' && (
+                <p className={`text-xs md:text-sm capitalize ${t.textSub}`}>
+                  {new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {section === 'dashboard' && lastRefresh && (
@@ -1894,13 +1923,13 @@ export default function Admin() {
             )}
             <button type="button" onClick={() => navigate('/caja')}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${t.btnSecondary}`}>
-              ← Volver a Caja
+              <span className="hidden sm:inline">← </span>Caja
             </button>
           </div>
         </div>
 
         {/* Sección activa */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
           {renderSection()}
         </div>
       </main>

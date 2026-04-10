@@ -597,6 +597,9 @@ export default function Caja() {
 
   // ── Menú hamburguesa ──────────────────────────────────────────────────────
   const [showNavMenu, setShowNavMenu] = useState(false)
+
+  // ── Bottom sheet (móvil) ───────────────────────────────────────────────────
+  const [showBottomSheet, setShowBottomSheet] = useState(false)
   const navMenuRef = useRef(null)
 
   useEffect(() => {
@@ -629,7 +632,7 @@ export default function Caja() {
               Taquero<span className="text-orange-500">POS</span>
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2">
             {/* Empleado activo */}
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-sm">
               <span className="text-slate-400">👤</span>
@@ -728,7 +731,7 @@ export default function Caja() {
         <div className="flex flex-1 overflow-hidden">
 
           {/* ── IZQUIERDA: Catálogo ────────────────────────────────────────── */}
-          <div className="flex flex-col w-[65%] border-r border-slate-800 overflow-hidden">
+          <div className="flex flex-col w-full md:w-[65%] border-r border-slate-800 overflow-hidden">
 
             <div className="px-4 py-3 shrink-0 border-b border-slate-800">
               <select
@@ -778,7 +781,7 @@ export default function Caja() {
 
               {/* Grid de productos */}
               {!loadingProductos && (
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                   {filteredProducts.map(product => (
                     <button
                       key={product.id}
@@ -812,7 +815,7 @@ export default function Caja() {
           </div>
 
           {/* ── DERECHA: Panel variable ────────────────────────────────────── */}
-          <div className="flex flex-col w-[35%] overflow-hidden">
+          <div className="hidden md:flex flex-col w-[35%] overflow-hidden">
 
             {/* ── PANEL DE COBRO ─────────────────────────────────────────── */}
             {cobrandoTicket ? (
@@ -1111,6 +1114,199 @@ export default function Caja() {
             )}
           </div>
         </div>
+
+        {/* ── BOTÓN FLOTANTE (móvil) ──────────────────────────────────────── */}
+        {!showBottomSheet && (
+          <div className="md:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40">
+            <button
+              type="button"
+              onClick={() => setShowBottomSheet(true)}
+              className="flex items-center gap-2 px-5 py-3.5 rounded-full bg-orange-500 hover:bg-orange-400
+                         text-white font-bold text-sm shadow-xl shadow-orange-500/40 transition active:scale-95"
+            >
+              🧾 Ver ticket
+              {activeItems.length > 0 && (
+                <span className="flex items-center gap-1">
+                  · {fmt(total)}
+                  <span className="bg-white/20 text-white text-xs font-semibold px-1.5 py-0.5 rounded-full">
+                    {activeItems.reduce((s, i) => s + i.qty, 0)}
+                  </span>
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* ── BOTTOM SHEET (móvil) ────────────────────────────────────────── */}
+        {showBottomSheet && (
+          <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowBottomSheet(false)}
+            />
+            {/* Sheet */}
+            <div className="relative bg-slate-900 rounded-t-3xl border-t border-slate-700 flex flex-col"
+                 style={{ maxHeight: '90vh' }}>
+              {/* Handle */}
+              <div className="flex justify-center pt-3 pb-1 shrink-0">
+                <div className="w-10 h-1 rounded-full bg-slate-600" />
+              </div>
+              {/* Header sheet */}
+              <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800 shrink-0">
+                <span className="text-white font-bold text-base">
+                  {cobrandoTicket
+                    ? `Cobrando — Mesa ${cobrandoTicket.mesa}`
+                    : activeTicket
+                      ? `Mesa ${activeTicket.mesa} · ${activeTicket.cliente}`
+                      : 'Sin ticket activo'}
+                </span>
+                <button type="button" onClick={() => setShowBottomSheet(false)}
+                  className="text-slate-400 hover:text-white transition text-xl leading-none">✕</button>
+              </div>
+
+              {/* Contenido — reutiliza el panel derecho exacto */}
+              <div className="flex flex-col flex-1 overflow-hidden">
+                {cobrandoTicket ? (
+                  <>
+                    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
+                      {(groupedCobrando ?? []).map((pItems, p) => {
+                        if (!pItems || pItems.length === 0) return null
+                        return (
+                          <div key={p}>
+                            {cobNumPersonas > 1 && (
+                              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mt-2 mb-1">Persona {p + 1}</p>
+                            )}
+                            {pItems.map(({ product, qty }) => (
+                              <div key={`${p}-${product.id}`} className="flex items-center justify-between py-0.5">
+                                <span className="text-slate-300 text-sm">{product.name}<span className="text-slate-500 ml-1">x{qty}</span></span>
+                                <span className="text-white text-sm font-medium">{fmt(product.price * qty)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <div className="px-4 py-4 border-t border-slate-800 space-y-3 shrink-0">
+                      <div className="flex items-end justify-between">
+                        <span className="text-slate-400 text-sm">Total a cobrar</span>
+                        <span className="text-white text-3xl font-extrabold">{fmt(cobrandoTotal)}</span>
+                      </div>
+                      {cobrandoTicket.method === 'efectivo' ? (
+                        <>
+                          <input type="number" min="0" step="1" value={pagoCliente}
+                            onChange={e => setPagoCliente(e.target.value)} placeholder="¿Con cuánto paga?"
+                            className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-xl font-bold
+                                       placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
+                          <div className={`flex items-center justify-between px-4 py-3 rounded-xl border transition
+                            ${pagoNum === 0 ? 'bg-slate-800 border-slate-700' : cambio >= 0 ? 'bg-green-500/10 border-green-500/40' : 'bg-red-500/10 border-red-500/40'}`}>
+                            <span className="text-slate-300 text-sm font-medium">Cambio</span>
+                            {pagoNum === 0
+                              ? <span className="text-slate-600 text-xl font-extrabold">—</span>
+                              : cambio >= 0
+                                ? <span className="text-green-400 text-xl font-extrabold">{fmt(cambio)}</span>
+                                : <div><span className="text-red-400 text-xl font-extrabold">{fmt(Math.abs(cambio))}</span><p className="text-red-500 text-xs">faltan</p></div>
+                            }
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl bg-slate-800 border border-slate-700">
+                          <span className="text-2xl">{cobrandoTicket.method === 'tarjeta' ? '💳' : '📲'}</span>
+                          <p className="text-white font-medium text-sm">Pago con {cobrandoTicket.method === 'tarjeta' ? 'Tarjeta' : 'Transferencia'}</p>
+                        </div>
+                      )}
+                      <button type="button" onClick={confirmarCobro}
+                        disabled={cobrandoTicket.method === 'efectivo' && pagoNum < cobrandoTotal}
+                        className="w-full py-4 rounded-xl bg-orange-500 hover:bg-orange-400 text-white font-extrabold text-lg
+                                   transition shadow-lg shadow-orange-500/30 disabled:opacity-40 disabled:cursor-not-allowed">
+                        Confirmar cobro
+                      </button>
+                      <button type="button" onClick={cancelarCobro}
+                        className="w-full py-1.5 text-slate-500 hover:text-slate-300 text-sm transition text-center">
+                        ← Cancelar
+                      </button>
+                    </div>
+                  </>
+                ) : activeTicket ? (
+                  <>
+                    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+                      {activeItems.length === 0 && (
+                        <p className="text-center text-slate-600 text-sm mt-8">Toca un producto para agregarlo</p>
+                      )}
+                      {(groupedActive ?? []).map((pItems, p) => (
+                        <div key={p}>
+                          {activeNumPersonas > 1 && (
+                            <div className="flex items-center gap-2 mt-2 mb-1">
+                              <div className="flex-1 h-px bg-slate-700" />
+                              <span className="text-slate-500 text-xs font-bold uppercase tracking-wider shrink-0">Persona {p + 1}</span>
+                              <div className="flex-1 h-px bg-slate-700" />
+                            </div>
+                          )}
+                          {(pItems ?? []).map(({ product, qty }) => (
+                            <div key={`${p}-${product.id}`}
+                              className="flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-2.5 mb-1.5">
+                              <span className="text-xl shrink-0">{product.image_url?.startsWith('http') ? '🌮' : (product.image_url || '🌮')}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white text-xs font-medium truncate">{product.name}</p>
+                                <p className="text-orange-400 text-xs">{fmt(product.price * qty)}</p>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button type="button" onClick={() => changeQty(product.id, p, -1)}
+                                  className="w-7 h-7 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-base font-bold flex items-center justify-center transition">−</button>
+                                <span className="w-6 text-center text-white text-sm font-semibold">{qty}</span>
+                                <button type="button" onClick={() => changeQty(product.id, p, +1)}
+                                  className="w-7 h-7 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-base font-bold flex items-center justify-center transition">+</button>
+                              </div>
+                              <button type="button" onClick={() => removeItem(product.id, p)}
+                                className="w-7 h-7 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-700 flex items-center justify-center transition shrink-0">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="px-4 py-4 border-t border-slate-800 space-y-3 shrink-0">
+                      <div className="flex items-end justify-between">
+                        <span className="text-slate-400 text-sm">Total</span>
+                        <span className="text-white text-3xl font-extrabold">{fmt(total)}</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { key: 'efectivo', label: 'Efectivo', icon: '💵' },
+                          { key: 'tarjeta', label: 'Tarjeta', icon: '💳' },
+                          { key: 'transferencia', label: 'Transferencia', icon: '📲' },
+                        ].map(({ key, label, icon }) => (
+                          <button key={key} type="button" onClick={() => setPaymentMethod(key)}
+                            className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-medium transition
+                              ${paymentMethod === key ? 'bg-orange-500/20 border-orange-500 text-orange-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                            <span className="text-xl">{icon}</span>{label}
+                          </button>
+                        ))}
+                      </div>
+                      <button type="button" onClick={cobrar} disabled={activeItems.length === 0}
+                        className="w-full py-4 rounded-xl bg-orange-500 hover:bg-orange-400 active:bg-orange-600
+                                   text-white font-extrabold text-lg tracking-wide transition
+                                   shadow-lg shadow-orange-500/30 disabled:opacity-40 disabled:cursor-not-allowed">
+                        COBRAR
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-center px-6">
+                    <div>
+                      <div className="text-5xl mb-3">🧾</div>
+                      <p className="text-slate-500 text-sm">Crea un ticket para comenzar</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── MODAL NUEVO TICKET ──────────────────────────────────────────── */}
         {showModal && (

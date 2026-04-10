@@ -300,6 +300,9 @@ function CocinaInterna() {
   const totalPendientes = pendientes.length + preparando.length
   const totalActivas    = listaSegura.filter(o => o?.estado !== 'entregado').length
 
+  // Tab activo en móvil
+  const [tabActivo, setTabActivo] = useState('pendiente')
+
   // Hora formateada 12h
   const horaDisplay = new Date(ahora).toLocaleTimeString('es-MX', {
     hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
@@ -308,29 +311,37 @@ function CocinaInterna() {
     weekday: 'long', day: 'numeric', month: 'long',
   })
 
+  const TABS = [
+    { key: 'pendiente',  label: 'Pendiente',     icono: '🔴', count: pendientes.length,  bgColor: 'bg-[#1a0808]', borderColor: 'border-red-900/50',    ordenes: pendientes  },
+    { key: 'preparando', label: 'En preparación', icono: '🟡', count: preparando.length,  bgColor: 'bg-[#1a1500]', borderColor: 'border-yellow-900/50', ordenes: preparando  },
+    { key: 'listo',      label: 'Listo',          icono: '🟢', count: listos.length,      bgColor: 'bg-[#081a08]', borderColor: 'border-green-900/50',  ordenes: listos      },
+  ]
+
+  const tabData = TABS.find(t => t.key === tabActivo) ?? TABS[0]
+
   return (
     <div className="h-screen bg-[#0f172a] flex flex-col overflow-hidden">
 
       {/* ── HEADER ───────────────────────────────────────────────────────── */}
-      <header className="shrink-0 flex items-center justify-between px-5 py-3
+      <header className="shrink-0 flex items-center justify-between px-4 py-3
                          bg-slate-950 border-b border-slate-800">
         <div className="flex items-center gap-3">
           <span className="text-2xl">🍳</span>
           <span className="text-white font-extrabold text-xl tracking-tight">Cocina</span>
           {totalPendientes > 0 ? (
             <span className="bg-red-500 text-white text-sm font-bold px-3 py-0.5 rounded-full animate-pulse">
-              {totalPendientes} pendiente{totalPendientes !== 1 ? 's' : ''}
+              {totalPendientes}
             </span>
           ) : (
-            <span className="bg-green-500/20 text-green-400 text-sm font-medium px-3 py-0.5 rounded-full">
+            <span className="bg-green-500/20 text-green-400 text-xs font-medium px-2 py-0.5 rounded-full hidden sm:inline">
               Al día ✓
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* Reloj 12h */}
-          <div className="text-right hidden sm:block">
+        <div className="flex items-center gap-3">
+          {/* Reloj 12h — oculto en móvil */}
+          <div className="text-right hidden md:block">
             <p className="text-white font-bold text-lg tabular-nums leading-tight">
               {horaDisplay}
             </p>
@@ -338,44 +349,64 @@ function CocinaInterna() {
           </div>
 
           <button type="button" onClick={() => navigate('/caja')}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700
                        text-slate-300 hover:text-white text-sm font-medium transition">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Volver a Caja
+            <span className="hidden sm:inline">Volver a Caja</span>
           </button>
         </div>
       </header>
 
-      {/* ── KANBAN ───────────────────────────────────────────────────────── */}
-      <div className="flex-1 grid grid-cols-3 gap-4 p-4 overflow-hidden">
+      {/* ── TABS (solo en móvil/tablet) ──────────────────────────────────── */}
+      <div className="md:hidden shrink-0 flex border-b border-slate-800 bg-slate-950">
+        {TABS.map(tab => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setTabActivo(tab.key)}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold transition border-b-2
+              ${tabActivo === tab.key
+                ? 'border-orange-500 text-orange-400'
+                : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+          >
+            <span>{tab.icono}</span>
+            <span>{tab.label}</span>
+            {tab.count > 0 && (
+              <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${tabActivo === tab.key ? 'bg-orange-500/20 text-orange-400' : 'bg-slate-700 text-slate-400'}`}>
+                {tab.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── KANBAN — desktop (md+) ───────────────────────────────────────── */}
+      <div className="hidden md:grid flex-1 grid-cols-3 gap-4 p-4 overflow-hidden">
+        {TABS.map(tab => (
+          <Columna
+            key={tab.key}
+            titulo={tab.label}
+            icono={tab.icono}
+            bgColor={tab.bgColor}
+            borderColor={tab.borderColor}
+            ordenes={tab.ordenes}
+            onCambiarEstado={cambiarEstado}
+            flashIds={flashIds}
+            ahora={ahora}
+          />
+        ))}
+      </div>
+
+      {/* ── COLUMNA ACTIVA — móvil ───────────────────────────────────────── */}
+      <div className="md:hidden flex-1 overflow-hidden p-3">
         <Columna
-          titulo="Pendiente"
-          icono="🔴"
-          bgColor="bg-[#1a0808]"
-          borderColor="border-red-900/50"
-          ordenes={pendientes}
-          onCambiarEstado={cambiarEstado}
-          flashIds={flashIds}
-          ahora={ahora}
-        />
-        <Columna
-          titulo="En preparación"
-          icono="🟡"
-          bgColor="bg-[#1a1500]"
-          borderColor="border-yellow-900/50"
-          ordenes={preparando}
-          onCambiarEstado={cambiarEstado}
-          flashIds={flashIds}
-          ahora={ahora}
-        />
-        <Columna
-          titulo="Listo"
-          icono="🟢"
-          bgColor="bg-[#081a08]"
-          borderColor="border-green-900/50"
-          ordenes={listos}
+          titulo={tabData.label}
+          icono={tabData.icono}
+          bgColor={tabData.bgColor}
+          borderColor={tabData.borderColor}
+          ordenes={tabData.ordenes}
           onCambiarEstado={cambiarEstado}
           flashIds={flashIds}
           ahora={ahora}
@@ -384,7 +415,7 @@ function CocinaInterna() {
 
       {/* ── FOOTER ───────────────────────────────────────────────────────── */}
       <div className="shrink-0 px-5 py-2 border-t border-slate-800 flex items-center justify-between">
-        <p className="text-slate-600 text-xs">
+        <p className="text-slate-600 text-xs hidden sm:block">
           TaqueroPOS · Cocina · Actualización cada 3 segundos
         </p>
         <p className="text-slate-600 text-xs">
