@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import NavMenu from '../components/NavMenu'
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -1934,10 +1935,7 @@ export default function Admin() {
                 </button>
               </>
             )}
-            <button type="button" onClick={() => navigate('/caja')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${t.btnSecondary}`}>
-              <span className="hidden sm:inline">← </span>Caja
-            </button>
+            <NavMenu />
           </div>
         </div>
 

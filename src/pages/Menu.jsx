@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, Component } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import NavMenu from '../components/NavMenu'
 
 const BUSINESS_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -379,8 +379,6 @@ function ProductForm({ product, categories, onSave, onCancel }) {
 
 // ─── Pantalla principal ───────────────────────────────────────────────────────
 export default function Menu() {
-  const navigate = useNavigate()
-
   const [products,   setProducts]  = useState([])
   const [categories, setCategories] = useState([])
   const [loading,    setLoading]   = useState(true)
@@ -491,11 +489,6 @@ export default function Menu() {
     return matchSearch && matchCat
   })
 
-  async function signOut() {
-    await supabase.auth.signOut()
-    navigate('/')
-  }
-
   // ── Vista: formulario ─────────────────────────────────────────────────────
   if (formView !== null) {
     return (
@@ -528,17 +521,7 @@ export default function Menu() {
           <h2 className="text-white font-bold text-base absolute left-1/2 -translate-x-1/2 hidden sm:block">
             Gestor de Menú
           </h2>
-          <button
-            type="button"
-            onClick={signOut}
-            className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-slate-800"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
-            </svg>
-            Cerrar sesión
-          </button>
+          <NavMenu />
         </header>
 
         {/* ── BARRA DE ACCIONES ─────────────────────────────────────────────── */}

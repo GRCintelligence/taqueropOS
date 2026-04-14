@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, Component } from 'react'
-import { useNavigate } from 'react-router-dom'
+import NavMenu from '../components/NavMenu'
 
 const LS_KEY = 'taqueropOS_ordenes_cocina'
 
@@ -220,7 +220,6 @@ function Columna({ titulo, icono, bgColor, borderColor, ordenes, onCambiarEstado
 
 // ─── Componente interno (dentro del ErrorBoundary) ────────────────────────────
 function CocinaInterna() {
-  const navigate  = useNavigate()
   const [ordenes,  setOrdenes]  = useState(() => readOrdenes())
   const [ahora,    setAhora]    = useState(() => Date.now())
   const [flashIds, setFlashIds] = useState(new Set())
@@ -348,14 +347,7 @@ function CocinaInterna() {
             <p className="text-slate-500 text-xs capitalize">{fechaDisplay}</p>
           </div>
 
-          <button type="button" onClick={() => navigate('/caja')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700
-                       text-slate-300 hover:text-white text-sm font-medium transition">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            <span className="hidden sm:inline">Volver a Caja</span>
-          </button>
+          <NavMenu />
         </div>
       </header>
 

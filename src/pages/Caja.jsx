@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, Component } from 'react'
+import { useState, useEffect, Component } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import NavMenu from '../components/NavMenu'
 
 const BUSINESS_ID = '00000000-0000-0000-0000-000000000001'
 const fmt = (n) => `$${(n ?? 0).toFixed(2)}`
@@ -598,34 +599,8 @@ export default function Caja() {
     setShowFondoModal(false)
   }
 
-  async function signOut() {
-    await supabase.auth.signOut()
-    navigate('/')
-  }
-
-  // ── Menú hamburguesa ──────────────────────────────────────────────────────
-  const [showNavMenu, setShowNavMenu] = useState(false)
-
   // ── Bottom sheet (móvil) ───────────────────────────────────────────────────
   const [showBottomSheet, setShowBottomSheet] = useState(false)
-  const navMenuRef = useRef(null)
-
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (navMenuRef.current && !navMenuRef.current.contains(e.target)) {
-        setShowNavMenu(false)
-      }
-    }
-    if (showNavMenu) document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showNavMenu])
-
-  const NAV_ITEMS = [
-    { icon: '🧾', label: 'Caja',           path: '/caja',   visible: true           },
-    { icon: '🍳', label: 'Cocina',          path: '/cocina', visible: puedeVerCocina },
-    { icon: '🍽️', label: 'Menú',           path: '/menu',   visible: puedeAdmin     },
-    { icon: '⚙️', label: 'Administración', path: '/admin',  visible: puedeAdmin     },
-  ].filter(i => i.visible)
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -664,44 +639,8 @@ export default function Caja() {
               </button>
             )}
           </div>
-          {/* Menú hamburguesa */}
-          <div className="relative" ref={navMenuRef}>
-            <button type="button"
-              onClick={() => setShowNavMenu(v => !v)}
-              className="flex items-center justify-center w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700
-                         text-slate-300 hover:text-white transition text-lg"
-              title="Navegación">
-              ☰
-            </button>
-
-            {showNavMenu && (
-              <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-slate-700
-                              bg-[#1e293b] shadow-2xl z-50 overflow-hidden py-1">
-                {NAV_ITEMS.map(({ icon, label, path }) => (
-                  <button key={path} type="button"
-                    onClick={() => { setShowNavMenu(false); navigate(path) }}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition
-                      ${path === '/caja'
-                        ? 'text-orange-400 bg-orange-500/10 font-semibold'
-                        : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}>
-                    <span className="text-base">{icon}</span>
-                    {label}
-                  </button>
-                ))}
-                <div className="border-t border-slate-700 mt-1 pt-1">
-                  <button type="button" onClick={signOut}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-400
-                               hover:bg-red-500/10 hover:text-red-400 transition">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
-                    </svg>
-                    Cerrar sesión
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Menú de navegación */}
+          <NavMenu />
         </header>
 
         {/* ── BARRA SUPERIOR (Nuevo Ticket + Drawer) ───────────────────────── */}
