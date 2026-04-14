@@ -332,6 +332,14 @@ export default function Caja() {
     catch { return null }
   })
 
+  // ── Permisos por rol ────────────────────────────────────────────────────────
+  const rol             = empleadoActivo?.rol || 'cajero'
+  const puedeAdmin      = ['admin', 'gerente'].includes(rol)
+  const puedeCobrar     = ['admin', 'gerente', 'cajero'].includes(rol)
+  const puedeCrearTicket = ['admin', 'gerente', 'cajero', 'mesero'].includes(rol)
+  const puedeCancelar   = ['admin', 'gerente'].includes(rol)
+  const puedeVerCocina  = ['admin', 'gerente', 'cocina'].includes(rol)
+
   // Fondo de caja
   const [fondo,             setFondo]             = useState(null)
   const [showFondoModal,    setShowFondoModal]    = useState(false)
@@ -613,11 +621,11 @@ export default function Caja() {
   }, [showNavMenu])
 
   const NAV_ITEMS = [
-    { icon: '🧾', label: 'Caja',           path: '/caja'   },
-    { icon: '🍳', label: 'Cocina',          path: '/cocina' },
-    { icon: '🍽️', label: 'Menú',           path: '/menu'   },
-    { icon: '⚙️', label: 'Administración', path: '/admin'  },
-  ]
+    { icon: '🧾', label: 'Caja',           path: '/caja',   visible: true           },
+    { icon: '🍳', label: 'Cocina',          path: '/cocina', visible: puedeVerCocina },
+    { icon: '🍽️', label: 'Menú',           path: '/menu',   visible: puedeAdmin     },
+    { icon: '⚙️', label: 'Administración', path: '/admin',  visible: puedeAdmin     },
+  ].filter(i => i.visible)
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -698,13 +706,15 @@ export default function Caja() {
 
         {/* ── BARRA SUPERIOR (Nuevo Ticket + Drawer) ───────────────────────── */}
         <div className="flex items-center gap-2 px-3 py-2 bg-slate-950 border-b border-slate-800 shrink-0">
-          <button
-            type="button"
-            onClick={openModal}
-            className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-400 text-white text-sm font-semibold transition"
-          >
-            <span className="text-lg leading-none">+</span> Nuevo Ticket
-          </button>
+          {puedeCrearTicket && (
+            <button
+              type="button"
+              onClick={openModal}
+              className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-400 text-white text-sm font-semibold transition"
+            >
+              <span className="text-lg leading-none">+</span> Nuevo Ticket
+            </button>
+          )}
 
           <button
             type="button"
@@ -990,14 +1000,16 @@ export default function Caja() {
                         + Persona
                       </button>
                       {/* Cancelar ticket */}
-                      <button
-                        type="button"
-                        onClick={() => { setCancelMotivo(''); setCancelPIN(''); setCancelError(''); setShowCancelModal(true) }}
-                        className="text-xs px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition"
-                        title="Cancelar ticket"
-                      >
-                        🗑️
-                      </button>
+                      {puedeCancelar && (
+                        <button
+                          type="button"
+                          onClick={() => { setCancelMotivo(''); setCancelPIN(''); setCancelError(''); setShowCancelModal(true) }}
+                          className="text-xs px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition"
+                          title="Cancelar ticket"
+                        >
+                          🗑️
+                        </button>
+                      )}
                     </div>
                   </div>
                   {activeNumPersonas > 1 && (
@@ -1098,17 +1110,23 @@ export default function Caja() {
                     ))}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={cobrar}
-                    disabled={activeItems.length === 0}
-                    className="w-full py-4 rounded-xl bg-orange-500 hover:bg-orange-400 active:bg-orange-600
-                               text-white font-extrabold text-lg tracking-wide transition
-                               shadow-lg shadow-orange-500/30
-                               disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    COBRAR
-                  </button>
+                  {puedeCobrar ? (
+                    <button
+                      type="button"
+                      onClick={cobrar}
+                      disabled={activeItems.length === 0}
+                      className="w-full py-4 rounded-xl bg-orange-500 hover:bg-orange-400 active:bg-orange-600
+                                 text-white font-extrabold text-lg tracking-wide transition
+                                 shadow-lg shadow-orange-500/30
+                                 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      COBRAR
+                    </button>
+                  ) : (
+                    <div className="w-full py-3 rounded-xl bg-slate-800 border border-slate-700 text-center">
+                      <p className="text-slate-500 text-sm">🔒 Solo el cajero puede cobrar</p>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -1287,12 +1305,18 @@ export default function Caja() {
                           </button>
                         ))}
                       </div>
-                      <button type="button" onClick={cobrar} disabled={activeItems.length === 0}
-                        className="w-full py-4 rounded-xl bg-orange-500 hover:bg-orange-400 active:bg-orange-600
-                                   text-white font-extrabold text-lg tracking-wide transition
-                                   shadow-lg shadow-orange-500/30 disabled:opacity-40 disabled:cursor-not-allowed">
-                        COBRAR
-                      </button>
+                      {puedeCobrar ? (
+                        <button type="button" onClick={cobrar} disabled={activeItems.length === 0}
+                          className="w-full py-4 rounded-xl bg-orange-500 hover:bg-orange-400 active:bg-orange-600
+                                     text-white font-extrabold text-lg tracking-wide transition
+                                     shadow-lg shadow-orange-500/30 disabled:opacity-40 disabled:cursor-not-allowed">
+                          COBRAR
+                        </button>
+                      ) : (
+                        <div className="w-full py-3 rounded-xl bg-slate-800 border border-slate-700 text-center">
+                          <p className="text-slate-500 text-sm">🔒 Solo el cajero puede cobrar</p>
+                        </div>
+                      )}
                     </div>
                   </>
                 ) : (

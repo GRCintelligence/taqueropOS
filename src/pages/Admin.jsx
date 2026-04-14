@@ -853,6 +853,19 @@ export default function Admin() {
 
   // ─── Empleados: Lista ─────────────────────────────────────────────────────
   function renderEmpleadosLista() {
+    // Solo el admin puede gestionar empleados
+    const empActivo = (() => { try { return JSON.parse(localStorage.getItem('taqueropOS_empleadoActivo') || '{}') } catch { return {} } })()
+    if ((empActivo?.rol ?? 'admin') !== 'admin') {
+      return (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="text-5xl mb-4">🔒</div>
+          <h2 className="text-white font-bold text-xl mb-2">Acceso restringido</h2>
+          <p className="text-slate-400 text-sm">
+            Tu rol de <span className="text-orange-400 font-semibold">{ROL_LABEL[empActivo?.rol] ?? empActivo?.rol ?? 'desconocido'}</span> no tiene permiso para esta sección.
+          </p>
+        </div>
+      )
+    }
     if (loadingEmps) return (
       <div className="flex items-center justify-center py-24">
         <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
